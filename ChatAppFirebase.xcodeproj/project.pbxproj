@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		C11BB35B29581BE0004DB39E /* ChatAppFirebaseApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11BB35A29581BE0004DB39E /* ChatAppFirebaseApp.swift */; };
-		C11BB35D29581BE0004DB39E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11BB35C29581BE0004DB39E /* ContentView.swift */; };
+		C11BB35D29581BE0004DB39E /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11BB35C29581BE0004DB39E /* AuthView.swift */; };
 		C11BB35F29581BED004DB39E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C11BB35E29581BED004DB39E /* Assets.xcassets */; };
 		C11BB36229581BED004DB39E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C11BB36129581BED004DB39E /* Preview Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -16,7 +16,7 @@
 /* Begin PBXFileReference section */
 		C11BB35729581BE0004DB39E /* ChatAppFirebase.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChatAppFirebase.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C11BB35A29581BE0004DB39E /* ChatAppFirebaseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAppFirebaseApp.swift; sourceTree = "<group>"; };
-		C11BB35C29581BE0004DB39E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		C11BB35C29581BE0004DB39E /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		C11BB35E29581BED004DB39E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C11BB36129581BED004DB39E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -52,7 +52,7 @@
 			isa = PBXGroup;
 			children = (
 				C11BB35A29581BE0004DB39E /* ChatAppFirebaseApp.swift */,
-				C11BB35C29581BE0004DB39E /* ContentView.swift */,
+				C11BB35C29581BE0004DB39E /* AuthView.swift */,
 				C11BB35E29581BED004DB39E /* Assets.xcassets */,
 				C11BB36029581BED004DB39E /* Preview Content */,
 			);
@@ -137,7 +137,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C11BB35D29581BE0004DB39E /* ContentView.swift in Sources */,
+				C11BB35D29581BE0004DB39E /* AuthView.swift in Sources */,
 				C11BB35B29581BE0004DB39E /* ChatAppFirebaseApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
