@@ -2,6 +2,6 @@
 Pods/
 xcuserdata/
 *.xcworkspace/
-*GoogleService-Info.plist
+*ChatAppFirebase/GoogleService-Info.plist
 Secrets
 Secrets.tar
