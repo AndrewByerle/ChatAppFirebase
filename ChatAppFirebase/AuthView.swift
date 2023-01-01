@@ -6,10 +6,9 @@
 //
 
 import SwiftUI
+import FirebaseCore
 import FirebaseAuth
 import FirebaseStorage
-
-
 
 struct AuthView: View {
     @State var isLoginShown = false
@@ -85,7 +84,7 @@ struct AuthView: View {
     }
     
     private func loginUser(){
-        Auth.auth().signIn(withEmail: email, password: password) { authResult, error in
+        FirebaseManager.FB.auth.signIn(withEmail: email, password: password) { authResult, error in
             if let error = error {
                 self.loginStatus = "Failed to login user: \(error)"
                 return
@@ -97,7 +96,7 @@ struct AuthView: View {
     
     
     private func createUser(){
-        Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
+        FirebaseManager.FB.auth.createUser(withEmail: email, password: password) { authResult, error in
             if let error = error{
                 self.loginStatus = "Failed to create user: \(error)"
                 return
@@ -111,9 +110,9 @@ struct AuthView: View {
     }
     
     private func persistImageToStorage(){
-        guard let uid = Auth.auth().currentUser?.uid else
+        guard let uid = FirebaseManager.FB.auth.currentUser?.uid else
             { return }
-        let ref = Storage.storage().reference(withPath: uid)
+        let ref = FirebaseManager.FB.storage.reference(withPath: uid)
         guard let data = self.image?.jpegData(compressionQuality: 0.5) else
             { return }
         ref.putData(data) { metaData, error in
@@ -121,16 +120,38 @@ struct AuthView: View {
                 self.loginStatus = "failed to upload img to storage: \(error)"
                 return
             }
-            
+
             ref.downloadURL { url, error in
                 if let error = error{
                     self.loginStatus = "failed to retrieve downloadUrl: \(error)"
                     return
                 }
                 self.loginStatus = "Successfully downloaded url: \(url?.absoluteString ?? "")"
+                guard let url = url else{
+                    return
+                }
+                storeUserInfo(profileImageUrl: url)
             }
         }
     }
+    
+    private func storeUserInfo(profileImageUrl: URL){
+        let db = FirebaseManager.FB.db
+        guard let uid = FirebaseManager.FB.auth.currentUser?.uid else {
+            return
+            }
+        let userData = ["email": email, "uid": uid, "profileImageUrl": profileImageUrl.absoluteString]
+        db.collection("users").document(uid).setData(userData) { err in
+            if let err = err {
+                print("Error writing document: \(err)")
+                self.loginStatus = "Error writing document: \(err)"
+            } else {
+                print("Success")
+                self.loginStatus = "Document successfully written!"
+            }
+        }
+    }
+    
 }
 
 struct ContentView_Previews: PreviewProvider {

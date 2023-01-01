@@ -8,6 +8,21 @@
 import SwiftUI
 import FirebaseCore
 import FirebaseStorage
+import FirebaseFirestore
+import FirebaseAuth
+
+class FirebaseManager: NSObject{
+    let db: Firestore
+    let auth: Auth
+    let storage: Storage
+    static var FB = FirebaseManager()
+    
+    override init(){
+        self.db = Firestore.firestore()
+        self.auth = Auth.auth()
+        self.storage = Storage.storage()
+    }
+}
 
 class AppDelegate: NSObject, UIApplicationDelegate {
   func application(_ application: UIApplication,
