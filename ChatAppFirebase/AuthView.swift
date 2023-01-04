@@ -17,6 +17,8 @@ struct AuthView: View {
     @State var loginStatus = ""
     @State var shouldShowImagePicker = false
     
+    let didCompleteLoginProcess: () -> ()
+    
     var body: some View {
         NavigationView{
             ScrollView{
@@ -91,11 +93,17 @@ struct AuthView: View {
             }
             print("logged in \(authResult?.user.uid ?? "")")
             loginStatus = "logged in \(authResult?.user.uid ?? "")"
+            
+            self.didCompleteLoginProcess()
         }
     }
     
     
     private func createUser(){
+        if image == nil{
+            self.loginStatus = "Select an avatar to continue"
+            return
+        }
         FirebaseManager.FB.auth.createUser(withEmail: email, password: password) { authResult, error in
             if let error = error{
                 self.loginStatus = "Failed to create user: \(error)"
@@ -148,6 +156,7 @@ struct AuthView: View {
             } else {
                 print("Success")
                 self.loginStatus = "Document successfully written!"
+                self.didCompleteLoginProcess()
             }
         }
     }
@@ -156,6 +165,8 @@ struct AuthView: View {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        AuthView()
+        AuthView(didCompleteLoginProcess: {
+            
+        })
     }
 }

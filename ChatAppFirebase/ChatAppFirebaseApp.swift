@@ -22,7 +22,10 @@ struct ChatAppFirebaseApp: App {
     
     var body: some Scene {
         WindowGroup {
-            AuthView()
+//            AuthView(didCompleteLoginProcess: {
+//
+//            })
+            MainMessagesView()
         }
     }
 }
