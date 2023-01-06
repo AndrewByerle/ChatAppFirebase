@@ -12,10 +12,34 @@ class ChatLogViewModel: ObservableObject {
     @Published var chatText = ""
     let chatUser: ChatUser?
     @Published var errorMessage = ""
+    @Published var sentMessages = [MessageData]()
     
     
-    init(chatUser: ChatUser?){
+    init(chatUser: ChatUser?) {
         self.chatUser = chatUser
+        fetchMessages()
+    }
+    
+    
+    private func fetchMessages() {
+        guard let fromId = FirebaseManager.FB.auth.currentUser?.uid else {
+            return }
+        guard let toId = chatUser?.uid else {
+            return }
+        FirebaseManager.FB.db.collection("messages").document(fromId).collection(toId).order(by: "timestamp").addSnapshotListener { snapshot, error in
+            if let error = error {
+                print("Failed to fetch messages: \(error)")
+                self.errorMessage = "Failed to fetch messages: \(error)"
+                return
+            }
+            
+            snapshot?.documentChanges.forEach({ change in
+                if change.type == .added {
+                    let data = change.document.data()
+                    self.sentMessages.append(.init(documentId: change.document.documentID, data: data))
+                }
+            })
+        }
     }
     
     func handleSend(){
@@ -63,23 +87,40 @@ struct ChatLogView: View {
     
     private var MessagesView: some View {
         ScrollView{
-                ForEach(0..<20) { i in
-                    HStack {
-                        Spacer()
+            Text(vm.errorMessage)
+            ForEach(vm.sentMessages) { msg in
+                VStack{
+                    if msg.fromId == FirebaseManager.FB.auth.currentUser?.uid {
                         HStack {
-                            Text("Fake message for now")
-                                .foregroundColor(.white)
-                            .font(.system(size: 18, weight: .regular))
-                        }
-                        .padding()
-                        .background(.blue)
-                    .cornerRadius(8)
+                            Spacer()
+                            HStack {
+                                Text(msg.chatText)
+                                    .foregroundColor(.white)
+                                    .font(.system(size: 18, weight: .regular))
+                                }
+                                .padding()
+                                .background(.blue)
+                            .cornerRadius(8)
+                            }
+                    } else{
+                        HStack {
+                            HStack {
+                                Text(msg.chatText)
+                                    .foregroundColor(.black)
+                                    .font(.system(size: 18, weight: .regular))
+                                }
+                                .padding()
+                                .background(.white)
+                            .cornerRadius(8)
+                            Spacer()
+                            }
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 8)
                 }
-                HStack{ Spacer() }
+                .padding(.horizontal)
+                .padding(.top, 8)
             }
+            HStack{ Spacer() }
+        }
         .background(Color(.init(white: 0.95, alpha: 1)))
         .safeAreaInset(edge: .bottom) {
             ChatBar

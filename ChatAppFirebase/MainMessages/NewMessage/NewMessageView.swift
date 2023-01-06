@@ -55,7 +55,6 @@ struct NewMessageView: View {
                             WebImage(url: URL(string: user.profileImageUrl))
                                 .resizable()
                                 .frame(width: 50, height: 50)
-                            // clip edges outside frame
                                 .clipped()
                                 .cornerRadius(50)
                                 .overlay(RoundedRectangle(cornerRadius: 55).stroke(Color(.label), lineWidth: 1))

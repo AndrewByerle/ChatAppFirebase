@@ -58,7 +58,6 @@ struct MainMessagesView: View {
         NavigationView{
             NavigationStack {
                 VStack {
-    //                Text("USER ID \(vm.chatUser?.uid ?? "")")
                     customNavbar
                     messagesView
                 }
@@ -66,7 +65,6 @@ struct MainMessagesView: View {
                     newMessageButton, alignment: .bottom
                 )
                 .navigationDestination(isPresented: $shouldNavigateToChat) {
-//                    Text("\(chatUser?.email ?? "")")
                     ChatLogView(chatUser: self.chatUser)
                 }
             .navigationBarHidden(true)
