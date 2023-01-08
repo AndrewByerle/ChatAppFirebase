@@ -39,6 +39,9 @@ class ChatLogViewModel: ObservableObject {
                     self.sentMessages.append(.init(documentId: change.document.documentID, data: data))
                 }
             })
+            DispatchQueue.main.async {
+                self.count += 1
+            }
         }
     }
     
@@ -57,6 +60,7 @@ class ChatLogViewModel: ObservableObject {
                 return
             }
             print("Successfully sent message")
+            self.count += 1
         }
         
         let recipientDocument = FirebaseManager.FB.db.collection("messages").document(toId).collection(fromId).document()
@@ -66,8 +70,43 @@ class ChatLogViewModel: ObservableObject {
                 return
             }
         }
+        persistRecentMessages()
         self.chatText = ""
     }
+    
+    
+    private func persistRecentMessages() {
+        guard let uid = FirebaseManager.FB.auth.currentUser?.uid else { return }
+        guard let toId = chatUser?.uid else { return }
+        
+        let data = [
+            "timestamp": Timestamp(),
+            "text": self.chatText,
+            "fromId": uid,
+            "toId": toId,
+            "profileImageUrl": chatUser?.profileImageUrl as Any,
+            "email": chatUser?.email as Any
+        ] as [String : Any]
+        
+        let document = FirebaseManager.FB.db.collection("recent_messages").document(uid).collection("messages").document(toId)
+        
+        document.setData(data){ error in
+            if let error = error {
+                self.errorMessage = "Filed to save recent message: \(error)"
+            }
+        }
+        
+        let recipientDocument = FirebaseManager.FB.db.collection("recent_messages").document(toId).collection("messages").document(uid)
+        
+        recipientDocument.setData(data){ error in
+            if let error = error {
+                self.errorMessage = "Filed to save recent message: \(error)"
+            }
+        }
+    }
+    
+    
+    @Published var count = 0
 }
 
 
@@ -81,45 +120,26 @@ struct ChatLogView: View {
     
     var body: some View {
         MessagesView
-            .navigationTitle(vm.chatUser?.email ?? "T")
+            .navigationTitle(vm.chatUser?.email ?? "")
         .navigationBarTitleDisplayMode(.inline)
     }
     
+    static let emptyScrollToString = "Empty"
+    
     private var MessagesView: some View {
         ScrollView{
-            Text(vm.errorMessage)
-            ForEach(vm.sentMessages) { msg in
-                VStack{
-                    if msg.fromId == FirebaseManager.FB.auth.currentUser?.uid {
-                        HStack {
-                            Spacer()
-                            HStack {
-                                Text(msg.chatText)
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 18, weight: .regular))
-                                }
-                                .padding()
-                                .background(.blue)
-                            .cornerRadius(8)
-                            }
-                    } else{
-                        HStack {
-                            HStack {
-                                Text(msg.chatText)
-                                    .foregroundColor(.black)
-                                    .font(.system(size: 18, weight: .regular))
-                                }
-                                .padding()
-                                .background(.white)
-                            .cornerRadius(8)
-                            Spacer()
-                            }
-                    }
+            ScrollViewReader { scrollViewProxy in
+                ForEach(vm.sentMessages) { message in
+                    MessageView(message: message)
                 }
-                .padding(.horizontal)
-                .padding(.top, 8)
+                HStack{ Spacer() }
+                    .id(Self.emptyScrollToString)
+                    .onReceive(vm.$count) { _ in
+                        withAnimation(.easeOut(duration: 0.5)){
+                            scrollViewProxy.scrollTo(Self.emptyScrollToString, anchor: .bottom)
+                        }
+                    }
             }
-            HStack{ Spacer() }
         }
         .background(Color(.init(white: 0.95, alpha: 1)))
         .safeAreaInset(edge: .bottom) {
@@ -164,5 +184,42 @@ struct ChatLogView_Previews: PreviewProvider {
 //
 //        }
         MainMessagesView()
+    }
+}
+
+
+struct MessageView: View {
+    let message: MessageData
+    
+    var body: some View {
+        VStack{
+            if message.fromId == FirebaseManager.FB.auth.currentUser?.uid {
+                HStack {
+                    Spacer()
+                    HStack {
+                        Text(message.chatText)
+                            .foregroundColor(.white)
+                            .font(.system(size: 18, weight: .regular))
+                    }
+                    .padding()
+                    .background(.blue)
+                    .cornerRadius(8)
+                }
+            } else{
+                HStack {
+                    HStack {
+                        Text(message.chatText)
+                            .foregroundColor(.black)
+                            .font(.system(size: 18, weight: .regular))
+                    }
+                    .padding()
+                    .background(.white)
+                    .cornerRadius(8)
+                    Spacer()
+                }
+            }
+        }
+        .padding(.horizontal)
+        .padding(.top, 8)
     }
 }

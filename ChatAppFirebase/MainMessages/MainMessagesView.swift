@@ -12,6 +12,7 @@ class MainMessagesViewModel: ObservableObject {
     @Published var errorMessage = ""
     @Published var chatUser: ChatUser?
     @Published var isUserLoggedOut = true
+    @Published var recentMessages = [RecentMessage]()
     
     init(){
         DispatchQueue.main.async {
@@ -19,6 +20,32 @@ class MainMessagesViewModel: ObservableObject {
         }
         
         fetchCurrentUser()
+        fetchRecentMessages()
+    }
+    
+    func fetchRecentMessages() {
+        guard let uid = FirebaseManager.FB.auth.currentUser?.uid else{
+            return }
+        FirebaseManager.FB.db.collection("recent_messages").document(uid).collection("messages")
+            .order(by: "timestamp")
+            .addSnapshotListener { [self] snapshot, error in
+            if let error = error {
+                print("Failed to listen for recent messages: \(error)")
+                self.errorMessage = "Failed to fetch recent messages: \(error)"
+                return
+            }
+            
+            snapshot?.documentChanges.forEach({ change in
+                    let data = change.document.data()
+                    let documentId = change.document.documentID
+                    if let index = self.recentMessages.firstIndex(where: { rm in
+                        rm.documentId == documentId
+                    }){
+                        recentMessages.remove(at: index)
+                    }
+                    self.recentMessages.insert(RecentMessage(documentId: documentId, data: data), at: 0)
+            })
+        }
     }
     
     func fetchCurrentUser(){
@@ -131,23 +158,33 @@ struct MainMessagesView: View {
     
     private var messagesView: some View{
         ScrollView{
-            ForEach(0...10, id: \.self){ num in
+            ForEach(vm.recentMessages){ recentMessage in
                 VStack {
                     NavigationLink {
                         Text("HAI")
                     } label: {
                         HStack(spacing: 16){
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 30))
-                                .padding(8)
+//                            Image(systemName: "person.fill")
+//                                .font(.system(size: 30))
+//                                .padding(8)
+//                                .overlay(RoundedRectangle(cornerRadius: 50)
+//                                    .stroke(Color(.label), lineWidth: 1))
+                            WebImage(url: URL(string: recentMessage.profileImageUrl)).resizable()
+                                .frame(width: 50, height: 50)
+                                .scaledToFit()
+                                .clipped()
+                                .cornerRadius(64)
                                 .overlay(RoundedRectangle(cornerRadius: 50)
                                     .stroke(Color(.label), lineWidth: 1))
-                            VStack(alignment: .leading){
-                                Text("Username")
+                                .shadow(radius: 5)
+                            VStack(alignment: .leading, spacing: 8){
+                                Text(recentMessage.email)
                                     .font(.system(size: 18, weight: .semibold))
-                                Text("Sent Message to User")
+                                    .foregroundColor(Color(.label))
+                                Text(recentMessage.text)
                                     .font(.system(size: 14))
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(Color(.darkGray))
+                                    .multilineTextAlignment(.leading)
                             }
                             Spacer()
                             Text("22d")
@@ -196,8 +233,8 @@ struct MainMessagesView: View {
 
 struct MainMessagesView_Previews: PreviewProvider {
     static var previews: some View {
-        MainMessagesView()
-            .preferredColorScheme(.dark)
+//        MainMessagesView()
+//            .preferredColorScheme(.dark)
         
         MainMessagesView()
     }
