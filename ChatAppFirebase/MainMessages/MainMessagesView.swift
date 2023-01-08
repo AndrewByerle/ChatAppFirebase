@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SDWebImageSwiftUI
+import FirebaseFirestoreSwift
 
 class MainMessagesViewModel: ObservableObject {
     @Published var errorMessage = ""
@@ -36,14 +37,15 @@ class MainMessagesViewModel: ObservableObject {
             }
             
             snapshot?.documentChanges.forEach({ change in
-                    let data = change.document.data()
-                    let documentId = change.document.documentID
-                    if let index = self.recentMessages.firstIndex(where: { rm in
-                        rm.documentId == documentId
-                    }){
-                        recentMessages.remove(at: index)
-                    }
-                    self.recentMessages.insert(RecentMessage(documentId: documentId, data: data), at: 0)
+                let documentId = change.document.documentID
+                if let index = self.recentMessages.firstIndex(where: { rm in
+                    rm.id == documentId
+                }){
+                    recentMessages.remove(at: index)
+                }
+                if let rm = try? change.document.data(as: RecentMessage.self){
+                    self.recentMessages.insert(rm, at: 0)
+                }
             })
         }
     }
@@ -164,11 +166,6 @@ struct MainMessagesView: View {
                         Text("HAI")
                     } label: {
                         HStack(spacing: 16){
-//                            Image(systemName: "person.fill")
-//                                .font(.system(size: 30))
-//                                .padding(8)
-//                                .overlay(RoundedRectangle(cornerRadius: 50)
-//                                    .stroke(Color(.label), lineWidth: 1))
                             WebImage(url: URL(string: recentMessage.profileImageUrl)).resizable()
                                 .frame(width: 50, height: 50)
                                 .scaledToFit()
@@ -187,7 +184,7 @@ struct MainMessagesView: View {
                                     .multilineTextAlignment(.leading)
                             }
                             Spacer()
-                            Text("22d")
+                            Text(recentMessage.timestamp.description)
                                 .font(.system(size: 14, weight: .semibold))
                         }
                     }
