@@ -8,6 +8,7 @@
 import SwiftUI
 import SDWebImageSwiftUI
 import FirebaseFirestoreSwift
+import Firebase
 
 class MainMessagesViewModel: ObservableObject {
     @Published var errorMessage = ""
@@ -24,10 +25,16 @@ class MainMessagesViewModel: ObservableObject {
         fetchRecentMessages()
     }
     
+    @Published var firestoreListener: ListenerRegistration?
+    
     func fetchRecentMessages() {
         guard let uid = FirebaseManager.FB.auth.currentUser?.uid else{
             return }
-        FirebaseManager.FB.db.collection("recent_messages").document(uid).collection("messages")
+        
+        firestoreListener?.remove()
+        self.recentMessages.removeAll()
+        
+        firestoreListener = FirebaseManager.FB.db.collection("recent_messages").document(uid).collection("messages")
             .order(by: "timestamp")
             .addSnapshotListener { [self] snapshot, error in
             if let error = error {
@@ -83,6 +90,8 @@ struct MainMessagesView: View {
     
     @State var shouldNavigateToChat = false
     
+    private var chatLogViewModel = ChatLogViewModel(chatUser: nil)
+    
     var body: some View {
         NavigationView{
             NavigationStack {
@@ -94,7 +103,7 @@ struct MainMessagesView: View {
                     newMessageButton, alignment: .bottom
                 )
                 .navigationDestination(isPresented: $shouldNavigateToChat) {
-                    ChatLogView(chatUser: self.chatUser)
+                    ChatLogView(vm: chatLogViewModel)
                 }
             .navigationBarHidden(true)
             }
@@ -153,6 +162,7 @@ struct MainMessagesView: View {
                 AuthView(didCompleteLoginProcess: {
                     vm.isUserLoggedOut = false
                     self.vm.fetchCurrentUser()
+                    self.vm.fetchRecentMessages()
                 })
             }
     }
@@ -162,8 +172,12 @@ struct MainMessagesView: View {
         ScrollView{
             ForEach(vm.recentMessages){ recentMessage in
                 VStack {
-                    NavigationLink {
-                        Text("HAI")
+                    Button {
+                        let uid = FirebaseManager.FB.auth.currentUser?.uid == recentMessage.fromId ? recentMessage.toId : recentMessage.fromId
+                        self.chatUser = ChatUser(data: ["email": recentMessage.email, "profileImageUrl": recentMessage.profileImageUrl, "uid": uid])
+                        self.chatLogViewModel.chatUser = self.chatUser
+                        self.chatLogViewModel.fetchMessages()
+                        shouldNavigateToChat.toggle()
                     } label: {
                         HStack(spacing: 16){
                             WebImage(url: URL(string: recentMessage.profileImageUrl)).resizable()
@@ -175,7 +189,7 @@ struct MainMessagesView: View {
                                     .stroke(Color(.label), lineWidth: 1))
                                 .shadow(radius: 5)
                             VStack(alignment: .leading, spacing: 8){
-                                Text(recentMessage.email)
+                                Text(recentMessage.username)
                                     .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(Color(.label))
                                 Text(recentMessage.text)
@@ -184,10 +198,11 @@ struct MainMessagesView: View {
                                     .multilineTextAlignment(.leading)
                             }
                             Spacer()
-                            Text(recentMessage.timestamp.description)
+                            Text(recentMessage.timeAgo)
                                 .font(.system(size: 14, weight: .semibold))
                         }
                     }
+
 
                     Divider()
                         .padding(.vertical, 8)
@@ -216,11 +231,12 @@ struct MainMessagesView: View {
             .padding(.horizontal)
             .shadow(radius: 16)
         }.fullScreenCover(isPresented: $shouldShowNewMessageScreen) {
-            NewMessageView(didSelectNewUser: {
-                user in
+            NewMessageView(didSelectNewUser: { user in
                 print(user.email)
-                self.chatUser = user
                 shouldNavigateToChat.toggle()
+                self.chatUser = user
+                chatLogViewModel.chatUser = user
+                chatLogViewModel.fetchMessages()
             })
         }
     }

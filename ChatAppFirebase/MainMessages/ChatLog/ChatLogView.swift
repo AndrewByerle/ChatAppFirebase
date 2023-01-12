@@ -10,7 +10,7 @@ import Firebase
 
 class ChatLogViewModel: ObservableObject {
     @Published var chatText = ""
-    let chatUser: ChatUser?
+    var chatUser: ChatUser?
     @Published var errorMessage = ""
     @Published var sentMessages = [MessageData]()
     
@@ -20,13 +20,16 @@ class ChatLogViewModel: ObservableObject {
         fetchMessages()
     }
     
+    var firestoreListener: ListenerRegistration?
     
-    private func fetchMessages() {
+    func fetchMessages() {
         guard let fromId = FirebaseManager.FB.auth.currentUser?.uid else {
             return }
         guard let toId = chatUser?.uid else {
             return }
-        FirebaseManager.FB.db.collection("messages").document(fromId).collection(toId).order(by: "timestamp").addSnapshotListener { snapshot, error in
+        sentMessages.removeAll()
+        
+        firestoreListener = FirebaseManager.FB.db.collection("messages").document(fromId).collection(toId).order(by: "timestamp").addSnapshotListener { snapshot, error in
             if let error = error {
                 print("Failed to fetch messages: \(error)")
                 self.errorMessage = "Failed to fetch messages: \(error)"
@@ -114,14 +117,13 @@ class ChatLogViewModel: ObservableObject {
 struct ChatLogView: View {
     @ObservedObject var vm: ChatLogViewModel
     
-    init(chatUser: ChatUser?){
-        vm = .init(chatUser: chatUser)
-    }
-    
     var body: some View {
         MessagesView
             .navigationTitle(vm.chatUser?.email ?? "")
-        .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.inline)
+            .onDisappear {
+                vm.firestoreListener?.remove()
+            }
     }
     
     static let emptyScrollToString = "Empty"
@@ -156,10 +158,8 @@ struct ChatLogView: View {
             Image(systemName: "photo.on.rectangle")
                 .font(.system(size: 25))
                 .foregroundColor(Color(.darkGray))
-            // TextEditor is preferred choice
             TextEditor(text: $vm.chatText)
                 .frame(height: 50)
-//            TextField("Description", text: $vm.chatText)
             Button {
                 vm.handleSend()
             } label: {
